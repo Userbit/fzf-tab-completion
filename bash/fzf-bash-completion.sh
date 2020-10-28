@@ -105,7 +105,7 @@ _fzf_bash_completion_parse_line() {
 }
 
 fzf_bash_completion() {
-    printf 'Loading matches ...\r'
+    #printf 'Loading matches ...\r'
 
     local COMP_WORDS COMP_CWORD COMP_POINT COMP_LINE
     local line="${READLINE_LINE:0:READLINE_POINT}"
@@ -179,13 +179,14 @@ _fzf_bash_completion_get_results() {
         compgen -abc -- "$2" | _fzf_bash_completion_dir_marker
     elif [[ "$2" == *"$trigger" ]]; then
         # replicate fzf ** trigger completion
+
         local suffix="${2##*/}"
         local prefix="${2::${#2}-${#suffix}}"
         suffix="${suffix::${#suffix}-${#trigger}}"
 
         local flags=()
         if [[ "$1" =~ cd|pushd|rmdir ]]; then
-            flags=( -type d )
+            flags=( --type d )
         fi
 
         if [[ ! "$prefix" =~ (.?/).* ]]; then
@@ -196,17 +197,36 @@ _fzf_bash_completion_get_results() {
 
         # smart case
         if [ "${suffix,,}" = "${suffix}" ]; then
-            flags+=( -ipath "$prefix$suffix*" )
+            flags+=( "$prefix$suffix*" )
         else
-            flags+=( -path "$prefix$suffix*" )
+            flags+=( "$prefix$suffix*" )
         fi
 
         echo compl_filenames=1 >&"${__evaled}"
-        find -L "$prefix" -mindepth 1 "${flags[@]}" \( -type d -printf "%p/\n" , -type f -print \) 2>/dev/null | sed 's,^\./,,'
+
+        #echo "prefix=$prefix flags=${flags[@]}"
+        fd --follow --full-path --ignore-case  "${flags[@]}" "$prefix"    # 2>/dev/null | sed 's,^\./,,'
     else
         _fzf_bash_completion_complete "$@"
     fi
 }
+
+# Command lines with fzf-tab-completion
+  # fzf -1 -0 --prompt > vim /** --nth 2 -d ?
+  # find -L / -mindepth 1 -ipath /* ( -type d -printf %p/ n , -type f -print )
+  # awk -vfind=^.{3} -vreplace=&? $0!="" && !x[$0]++ { sub(find, replace); print $0; system("") }
+# Command lines without fzf-tab-completion
+  # 100571 fzf -q
+  # 100572 fd --hidden --follow --exclude .git . /
+
+# Transcript:
+# find -L / -mindepth 1 -ipath /* ( -type d -printf %p/ n , -type f -print )
+# find 
+  # -L /          # Follow symbolic links.
+  # -mindepth 1   # process all files except the starting-points. 
+  # -ipath /*     # File name matches shell pattern.
+  # ( -type d -printf %p/\n , -type f -print )    # Print as dirs as files
+
 
 fzf_bash_completer() {
     local value code
