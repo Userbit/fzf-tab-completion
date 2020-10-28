@@ -205,7 +205,7 @@ _fzf_bash_completion_get_results() {
         echo compl_filenames=1 >&"${__evaled}"
 
         #echo "prefix=$prefix flags=${flags[@]}"
-        fd --follow --full-path --ignore-case  "${flags[@]}" "$prefix"    # 2>/dev/null | sed 's,^\./,,'
+        fd --hidden --follow --exclude=.git --full-path --ignore-case  "${flags[@]}" "$prefix"    # 2>/dev/null | sed 's,^\./,,'
     else
         _fzf_bash_completion_complete "$@"
     fi
